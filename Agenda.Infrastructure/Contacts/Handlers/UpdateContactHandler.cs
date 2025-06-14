@@ -1,7 +1,6 @@
 using Agenda.Application.Contacts.Commands;
 using Agenda.Infrastructure.Data;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Agenda.Infrastructure.Contacts.Handlers;
 

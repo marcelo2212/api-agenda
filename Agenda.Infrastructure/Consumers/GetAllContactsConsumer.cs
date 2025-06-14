@@ -16,11 +16,13 @@ public class GetAllContactsConsumer : BackgroundService
     private readonly ILogger<GetAllContactsConsumer> _logger;
     private readonly IModel _channel;
     private readonly IConnection? _connection;
+    internal AsyncEventingBasicConsumer? TestConsumer { get; private set; }
 
     public GetAllContactsConsumer(IServiceProvider serviceProvider, ILogger<GetAllContactsConsumer> logger, RabbitMqOptions options)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+
 
         var factory = new ConnectionFactory
         {
@@ -32,7 +34,6 @@ public class GetAllContactsConsumer : BackgroundService
             DispatchConsumersAsync = true
         };
 
-        // Retry para conectar ao RabbitMQ
         _connection = null;
         int retries = 10;
         while (retries-- > 0)
@@ -62,6 +63,7 @@ public class GetAllContactsConsumer : BackgroundService
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var consumer = new AsyncEventingBasicConsumer(_channel);
+        
         consumer.Received += async (model, ea) =>
         {
             var props = ea.BasicProperties;

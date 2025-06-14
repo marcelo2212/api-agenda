@@ -19,7 +19,6 @@ public class ContactsController : ControllerBase
     }
 
     [HttpPost]
-    [AllowAnonymous] // remover quando JWT estiver habilitado
     public async Task<IActionResult> Create([FromBody] CreateContactDto dto)
     {
         var id = await _mediator.Send(new CreateContactCommand(dto));

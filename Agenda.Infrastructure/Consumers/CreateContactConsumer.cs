@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Threading;
+
 
 namespace Agenda.Infrastructure.Messaging.Consumers;
 
@@ -34,7 +34,7 @@ public class CreateContactConsumer : BackgroundService
             DispatchConsumersAsync = true
         };
 
-        // Retry para conectar ao RabbitMQ
+        
         _connection = null;
         int retries = 10;
         while (retries-- > 0)
@@ -126,4 +126,6 @@ public class CreateContactConsumer : BackgroundService
         _connection?.Dispose();
         base.Dispose();
     }
+
+    
 }

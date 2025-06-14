@@ -1,6 +1,5 @@
 using Agenda.Application;
 using Agenda.Infrastructure;
-using Agenda.Infrastructure.Contacts.Handlers;
 using Agenda.Infrastructure.Data;
 using Agenda.Infrastructure.Messaging.Consumers;
 using FluentValidation;
@@ -10,7 +9,6 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração fixa da connection string
 var connectionString = "Host=postgres;Port=5432;Database=agenda;Username=postgres;Password=postgres";
 
 builder.Services.AddDbContext<AgendaDbContext>(options =>
@@ -28,7 +26,7 @@ builder.Services
     .AddFluentValidationClientsideAdapters()
     .AddValidatorsFromAssemblyContaining<ApplicationAssemblyReference>();
 
-// Configuração do RabbitMQ com valores fixos
+
 builder.Services.AddSingleton(new RabbitMqOptions
 {
     Hostname = "rabbitmq",
@@ -67,7 +65,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 
-// Executa migração com retry
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AgendaDbContext>();

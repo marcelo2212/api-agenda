@@ -32,7 +32,6 @@ public class GetContactByIdConsumer : BackgroundService
             DispatchConsumersAsync = true
         };
 
-        // Retry de conexão
         _connection = null;
         int retries = 10;
         while (retries-- > 0)

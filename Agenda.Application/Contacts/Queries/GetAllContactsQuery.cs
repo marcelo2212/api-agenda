@@ -1,6 +1,4 @@
-using Agenda.Application.Contacts.Dtos;
 using MediatR;
-using System.Collections.Generic;
 
 namespace Agenda.Application.Contacts.Queries
 {

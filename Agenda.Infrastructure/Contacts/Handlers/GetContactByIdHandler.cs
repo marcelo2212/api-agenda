@@ -1,4 +1,3 @@
-using Agenda.Application.Contacts.Dtos;
 using Agenda.Application.Contacts.Queries;
 using Agenda.Infrastructure.Data;
 using MediatR;

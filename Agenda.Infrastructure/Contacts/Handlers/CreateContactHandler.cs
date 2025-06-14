@@ -1,5 +1,4 @@
 using Agenda.Application.Contacts.Commands;
-using Agenda.Application.Contacts.Dtos;
 using Agenda.Domain.Entities;
 using Agenda.Infrastructure.Data;
 using MediatR;
