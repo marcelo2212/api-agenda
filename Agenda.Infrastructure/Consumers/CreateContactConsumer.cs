@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-
 namespace Agenda.Infrastructure.Messaging.Consumers;
 
 public class CreateContactConsumer : BackgroundService
@@ -19,7 +18,11 @@ public class CreateContactConsumer : BackgroundService
     private readonly IModel _channel;
     private readonly IConnection? _connection;
 
-    public CreateContactConsumer(IServiceProvider serviceProvider, ILogger<CreateContactConsumer> logger, RabbitMqOptions options)
+    public CreateContactConsumer(
+        IServiceProvider serviceProvider,
+        ILogger<CreateContactConsumer> logger,
+        RabbitMqOptions options
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -31,10 +34,9 @@ public class CreateContactConsumer : BackgroundService
             UserName = options.Username,
             Password = options.Password,
             VirtualHost = options.VirtualHost,
-            DispatchConsumersAsync = true
+            DispatchConsumersAsync = true,
         };
 
-        
         _connection = null;
         int retries = 10;
         while (retries-- > 0)
@@ -47,7 +49,11 @@ public class CreateContactConsumer : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "RabbitMQ não disponível. Tentativas restantes: {Retries}", retries);
+                _logger.LogWarning(
+                    ex,
+                    "RabbitMQ não disponível. Tentativas restantes: {Retries}",
+                    retries
+                );
                 Thread.Sleep(5000);
             }
         }
@@ -58,12 +64,18 @@ public class CreateContactConsumer : BackgroundService
         }
 
         _channel = _connection.CreateModel();
-        _channel.QueueDeclare(queue: "contacts.create", durable: true, exclusive: false, autoDelete: false);
+        _channel.QueueDeclare(
+            queue: "contacts.create",
+            durable: true,
+            exclusive: false,
+            autoDelete: false
+        );
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var consumer = new AsyncEventingBasicConsumer(_channel);
+        _channel.BasicConsume(queue: "contacts.create", autoAck: false, consumer: consumer);
         consumer.Received += async (model, ea) =>
         {
             var props = ea.BasicProperties;
@@ -72,10 +84,20 @@ public class CreateContactConsumer : BackgroundService
 
             try
             {
-                var body = ea.Body.ToArray();
-                var dto = JsonSerializer.Deserialize<CreateContactDto>(body);
+                if (string.IsNullOrWhiteSpace(props.ReplyTo))
+                {
+                    _logger.LogWarning("Mensagem recebida sem ReplyTo. Ignorando resposta RPC.");
+                    _channel.BasicAck(ea.DeliveryTag, false);
+                    return;
+                }
 
-                if (dto == null)
+                var body = ea.Body.ToArray();
+                var dto = JsonSerializer.Deserialize<CreateContactDto>(
+                    body,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (dto is null)
                 {
                     _logger.LogWarning("Payload inválido recebido em contacts.create");
                     _channel.BasicAck(ea.DeliveryTag, false);
@@ -85,12 +107,18 @@ public class CreateContactConsumer : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                 var command = new CreateContactCommand(dto);
-                var id = await mediator.Send(command, stoppingToken);
 
-                _logger.LogInformation("Contato criado com sucesso: {Id}", id);
+                Guid id = await mediator.Send(command, stoppingToken);
 
-                var responseBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(id));
+                var response = new ContactResponseDto
+                {
+                    Id = id,
+                    Name = dto.Name,
+                    Email = dto.Email,
+                    Phone = dto.Phone,
+                };
 
+                var responseBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(response));
                 _channel.BasicPublish(
                     exchange: "",
                     routingKey: props.ReplyTo,
@@ -100,14 +128,23 @@ public class CreateContactConsumer : BackgroundService
             }
             catch (Exception ex)
             {
+                var errorResponse = new { error = true, message = ex.Message };
+                var errorBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(errorResponse));
+
+                _logger.LogWarning(
+                    "Respondendo ERRO via RPC: ReplyTo={ReplyTo}, CorrelationId={CorrelationId}, Payload={Payload}",
+                    props.ReplyTo,
+                    props.CorrelationId,
+                    Encoding.UTF8.GetString(errorBytes)
+                );
+
                 _logger.LogError(ex, "Erro ao processar mensagem contacts.create");
-                var error = Encoding.UTF8.GetBytes($"Erro: {ex.Message}");
 
                 _channel.BasicPublish(
                     exchange: "",
                     routingKey: props.ReplyTo,
                     basicProperties: replyProps,
-                    body: error
+                    body: errorBytes
                 );
             }
             finally
@@ -116,7 +153,6 @@ public class CreateContactConsumer : BackgroundService
             }
         };
 
-        _channel.BasicConsume(queue: "contacts.create", autoAck: false, consumer: consumer);
         return Task.CompletedTask;
     }
 
@@ -126,6 +162,4 @@ public class CreateContactConsumer : BackgroundService
         _connection?.Dispose();
         base.Dispose();
     }
-
-    
 }

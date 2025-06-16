@@ -14,10 +14,13 @@ namespace Agenda.Application.Contacts.Handlers
             _db = db;
         }
 
-        public async Task<List<ContactDto>> Handle(GetAllContactsQuery request, CancellationToken cancellationToken)
+        public async Task<List<ContactDto>> Handle(
+            GetAllContactsQuery request,
+            CancellationToken cancellationToken
+        )
         {
-            return await _db.Contacts
-                .AsNoTracking()
+            return await _db
+                .Contacts.AsNoTracking()
                 .OrderByDescending(c => c.CreatedAt)
                 .Select(c => new ContactDto
                 {
@@ -25,7 +28,7 @@ namespace Agenda.Application.Contacts.Handlers
                     Name = c.Name,
                     Email = c.Email,
                     Phone = c.Phone,
-                    CreatedAt = c.CreatedAt
+                    CreatedAt = c.CreatedAt,
                 })
                 .ToListAsync(cancellationToken);
         }

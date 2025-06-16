@@ -17,7 +17,11 @@ public class GetContactByIdConsumer : BackgroundService
     private readonly IModel _channel;
     private readonly IConnection? _connection;
 
-    public GetContactByIdConsumer(IServiceProvider serviceProvider, ILogger<GetContactByIdConsumer> logger, RabbitMqOptions options)
+    public GetContactByIdConsumer(
+        IServiceProvider serviceProvider,
+        ILogger<GetContactByIdConsumer> logger,
+        RabbitMqOptions options
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -29,7 +33,7 @@ public class GetContactByIdConsumer : BackgroundService
             UserName = options.Username,
             Password = options.Password,
             VirtualHost = options.VirtualHost,
-            DispatchConsumersAsync = true
+            DispatchConsumersAsync = true,
         };
 
         _connection = null;
@@ -44,7 +48,11 @@ public class GetContactByIdConsumer : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "RabbitMQ não disponível (contacts.getbyid). Tentativas restantes: {Retries}", retries);
+                _logger.LogWarning(
+                    ex,
+                    "RabbitMQ não disponível (contacts.getbyid). Tentativas restantes: {Retries}",
+                    retries
+                );
                 Thread.Sleep(5000);
             }
         }
@@ -55,7 +63,12 @@ public class GetContactByIdConsumer : BackgroundService
         }
 
         _channel = _connection.CreateModel();
-        _channel.QueueDeclare(queue: "contacts.getbyid", durable: true, exclusive: false, autoDelete: false);
+        _channel.QueueDeclare(
+            queue: "contacts.getbyid",
+            durable: true,
+            exclusive: false,
+            autoDelete: false
+        );
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -65,12 +78,13 @@ public class GetContactByIdConsumer : BackgroundService
         {
             var props = ea.BasicProperties;
             var replyProps = _channel.CreateBasicProperties();
-            replyProps.CorrelationId = props.CorrelationId;
+            replyProps.CorrelationId = props?.CorrelationId;
 
             try
             {
                 var body = ea.Body.ToArray();
-                var id = JsonSerializer.Deserialize<Guid>(body);
+                var payload = JsonSerializer.Deserialize<Dictionary<string, string>>(body);
+                var id = Guid.Parse(payload["id"]);
 
                 using var scope = _serviceProvider.CreateScope();
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
@@ -78,13 +92,12 @@ public class GetContactByIdConsumer : BackgroundService
                 var result = await mediator.Send(new GetContactByIdQuery(id), stoppingToken);
 
                 var responseJson = JsonSerializer.Serialize(result);
-                _logger.LogInformation("[✔] Resposta para contacts.getbyid: {Response}", responseJson);
 
                 var responseBytes = Encoding.UTF8.GetBytes(responseJson);
 
                 _channel.BasicPublish(
                     exchange: "",
-                    routingKey: props.ReplyTo,
+                    routingKey: props?.ReplyTo,
                     basicProperties: replyProps,
                     body: responseBytes
                 );
@@ -92,11 +105,13 @@ public class GetContactByIdConsumer : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao processar mensagem contacts.getbyid");
-                var error = Encoding.UTF8.GetBytes($"Erro: {ex.Message}");
+
+                var errorJson = JsonSerializer.Serialize(new { error = ex.Message });
+                var error = Encoding.UTF8.GetBytes(errorJson);
 
                 _channel.BasicPublish(
                     exchange: "",
-                    routingKey: props.ReplyTo,
+                    routingKey: props?.ReplyTo,
                     basicProperties: replyProps,
                     body: error
                 );

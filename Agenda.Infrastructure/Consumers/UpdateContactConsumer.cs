@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Agenda.Application.Contacts.Commands;
 using Agenda.Application.Contacts.Dtos;
+using Agenda.Application.Contacts.Queries;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +19,11 @@ public class UpdateContactConsumer : BackgroundService
     private readonly IModel _channel;
     private readonly IConnection _connection;
 
-    public UpdateContactConsumer(IServiceProvider serviceProvider, ILogger<UpdateContactConsumer> logger, RabbitMqOptions options)
+    public UpdateContactConsumer(
+        IServiceProvider serviceProvider,
+        ILogger<UpdateContactConsumer> logger,
+        RabbitMqOptions options
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -30,12 +35,17 @@ public class UpdateContactConsumer : BackgroundService
             UserName = options.Username,
             Password = options.Password,
             VirtualHost = options.VirtualHost,
-            DispatchConsumersAsync = true
+            DispatchConsumersAsync = true,
         };
 
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
-        _channel.QueueDeclare(queue: "contacts.update", durable: true, exclusive: false, autoDelete: false);
+        _channel.QueueDeclare(
+            queue: "contacts.update",
+            durable: true,
+            exclusive: false,
+            autoDelete: false
+        );
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -65,10 +75,32 @@ public class UpdateContactConsumer : BackgroundService
                 var command = new UpdateContactCommand(payload.Id, payload.Contact);
                 await mediator.Send(command, stoppingToken);
 
-                var message = $"Contato {payload.Id} atualizado com sucesso";
-                _logger.LogInformation("[✔] {Message}", message);
+                var updated = await mediator.Send(
+                    new GetContactByIdQuery(payload.Id),
+                    stoppingToken
+                );
 
-                var responseBytes = Encoding.UTF8.GetBytes(message);
+                if (updated == null)
+                {
+                    _logger.LogWarning("Contato atualizado não encontrado: {Id}", payload.Id);
+                    var notFound = Encoding.UTF8.GetBytes(
+                        $"Erro: contato {payload.Id} não encontrado."
+                    );
+                    _channel.BasicPublish(
+                        exchange: "",
+                        routingKey: props.ReplyTo,
+                        basicProperties: replyProps,
+                        body: notFound
+                    );
+                    return;
+                }
+
+                var json = JsonSerializer.Serialize(
+                    updated,
+                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+                );
+
+                var responseBytes = Encoding.UTF8.GetBytes(json);
 
                 _channel.BasicPublish(
                     exchange: "",

@@ -20,7 +20,8 @@ public class DeleteContactConsumer
         IServiceProvider serviceProvider,
         ILogger<DeleteContactConsumer> logger,
         RabbitMqOptions options,
-        IModel? injectedChannel = null)
+        IModel? injectedChannel = null
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -38,7 +39,7 @@ public class DeleteContactConsumer
             Port = _options.Port,
             UserName = _options.Username,
             Password = _options.Password,
-            VirtualHost = _options.VirtualHost
+            VirtualHost = _options.VirtualHost,
         };
 
         var connection = factory.CreateConnection();
@@ -61,17 +62,22 @@ public class DeleteContactConsumer
         _channel.BasicConsume(queue: "contacts.delete", autoAck: true, consumer: consumer);
     }
 
-    private async Task ExecuteAsync(byte[] body, IBasicProperties props, CancellationToken cancellationToken)
+    private async Task ExecuteAsync(
+        byte[] body,
+        IBasicProperties props,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
             var id = JsonSerializer.Deserialize<Guid>(Encoding.UTF8.GetString(body));
 
-            using var scope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            using var scope = _serviceProvider
+                .GetRequiredService<IServiceScopeFactory>()
+                .CreateScope();
             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-             await mediator.Send(new DeleteContactCommand(id), cancellationToken);
-            _logger.LogInformation("Contato com ID {Id} deletado com sucesso.", id);
+            await mediator.Send(new DeleteContactCommand(id), cancellationToken);
         }
         catch (Exception ex)
         {

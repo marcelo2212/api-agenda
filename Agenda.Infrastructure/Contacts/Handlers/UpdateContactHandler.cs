@@ -13,7 +13,10 @@ public class UpdateContactHandler : IRequestHandler<UpdateContactCommand, bool>
         _db = db;
     }
 
-    public async Task<bool> Handle(UpdateContactCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(
+        UpdateContactCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var contact = await _db.Contacts.FindAsync(new object[] { request.Id }, cancellationToken);
 

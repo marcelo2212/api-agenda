@@ -14,13 +14,16 @@ public class CreateContactHandler : IRequestHandler<CreateContactCommand, Guid>
         _db = db;
     }
 
-    public async Task<Guid> Handle(CreateContactCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(
+        CreateContactCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var entity = new Contact
         {
             Name = request.Contact.Name,
             Email = request.Contact.Email,
-            Phone = request.Contact.Phone
+            Phone = request.Contact.Phone,
         };
 
         _db.Contacts.Add(entity);

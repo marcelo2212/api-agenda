@@ -1,8 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using Agenda.Application.Contacts.Commands;
 using Agenda.Application.Contacts.Dtos;
 using Agenda.Infrastructure.Contacts.Handlers;
 using Agenda.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Agenda.Tests.Contacts.Handlers
 {
@@ -27,7 +27,7 @@ namespace Agenda.Tests.Contacts.Handlers
             {
                 Name = "João Silva",
                 Email = "joao@email.com",
-                Phone = "11999998888"
+                Phone = "11999998888",
             };
 
             var command = new CreateContactCommand(dto);

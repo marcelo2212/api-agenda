@@ -26,7 +26,7 @@ namespace Agenda.Tests.Contacts.Handlers
             {
                 Name = "Maria",
                 Email = "maria@email.com",
-                Phone = "11988887777"
+                Phone = "11988887777",
             };
 
             context.Contacts.Add(contact);

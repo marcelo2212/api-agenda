@@ -24,9 +24,24 @@ namespace Agenda.Tests.Contacts.Handlers
 
             var contacts = new List<Contact>
             {
-                new() { Name = "Ana", Email = "ana@email.com", Phone = "11999990001" },
-                new() { Name = "Bruno", Email = "bruno@email.com", Phone = "11999990002" },
-                new() { Name = "Carlos", Email = "carlos@email.com", Phone = "11999990003" }
+                new()
+                {
+                    Name = "Ana",
+                    Email = "ana@email.com",
+                    Phone = "11999990001",
+                },
+                new()
+                {
+                    Name = "Bruno",
+                    Email = "bruno@email.com",
+                    Phone = "11999990002",
+                },
+                new()
+                {
+                    Name = "Carlos",
+                    Email = "carlos@email.com",
+                    Phone = "11999990003",
+                },
             };
 
             context.Contacts.AddRange(contacts);

@@ -18,11 +18,14 @@ public class GetAllContactsConsumer : BackgroundService
     private readonly IConnection? _connection;
     internal AsyncEventingBasicConsumer? TestConsumer { get; private set; }
 
-    public GetAllContactsConsumer(IServiceProvider serviceProvider, ILogger<GetAllContactsConsumer> logger, RabbitMqOptions options)
+    public GetAllContactsConsumer(
+        IServiceProvider serviceProvider,
+        ILogger<GetAllContactsConsumer> logger,
+        RabbitMqOptions options
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-
 
         var factory = new ConnectionFactory
         {
@@ -31,7 +34,7 @@ public class GetAllContactsConsumer : BackgroundService
             UserName = options.Username,
             Password = options.Password,
             VirtualHost = options.VirtualHost,
-            DispatchConsumersAsync = true
+            DispatchConsumersAsync = true,
         };
 
         _connection = null;
@@ -46,7 +49,11 @@ public class GetAllContactsConsumer : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "RabbitMQ não disponível. Tentativas restantes: {Retries}", retries);
+                _logger.LogWarning(
+                    ex,
+                    "RabbitMQ não disponível. Tentativas restantes: {Retries}",
+                    retries
+                );
                 Thread.Sleep(5000);
             }
         }
@@ -57,13 +64,18 @@ public class GetAllContactsConsumer : BackgroundService
         }
 
         _channel = _connection.CreateModel();
-        _channel.QueueDeclare(queue: "contacts.getall", durable: true, exclusive: false, autoDelete: false);
+        _channel.QueueDeclare(
+            queue: "contacts.getall",
+            durable: true,
+            exclusive: false,
+            autoDelete: false
+        );
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var consumer = new AsyncEventingBasicConsumer(_channel);
-        
+
         consumer.Received += async (model, ea) =>
         {
             var props = ea.BasicProperties;
@@ -78,7 +90,6 @@ public class GetAllContactsConsumer : BackgroundService
                 var result = await mediator.Send(new GetAllContactsQuery(), stoppingToken);
 
                 var responseJson = JsonSerializer.Serialize(result);
-                _logger.LogInformation("[✔] Resposta para contacts.getall: {Response}", responseJson);
 
                 var responseBytes = Encoding.UTF8.GetBytes(responseJson);
 
@@ -92,6 +103,7 @@ public class GetAllContactsConsumer : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao processar mensagem contacts.getall");
+
                 var error = Encoding.UTF8.GetBytes($"Erro: {ex.Message}");
 
                 _channel.BasicPublish(
@@ -99,6 +111,11 @@ public class GetAllContactsConsumer : BackgroundService
                     routingKey: props.ReplyTo,
                     basicProperties: replyProps,
                     body: error
+                );
+
+                _logger.LogWarning(
+                    "Resposta de erro publicada para ReplyTo: {ReplyTo}",
+                    props.ReplyTo
                 );
             }
             finally
@@ -108,11 +125,13 @@ public class GetAllContactsConsumer : BackgroundService
         };
 
         _channel.BasicConsume(queue: "contacts.getall", autoAck: false, consumer: consumer);
+
         return Task.CompletedTask;
     }
 
     public override void Dispose()
     {
+        _logger.LogInformation("Encerrando conexão com RabbitMQ...");
         _channel?.Dispose();
         _connection?.Dispose();
         base.Dispose();

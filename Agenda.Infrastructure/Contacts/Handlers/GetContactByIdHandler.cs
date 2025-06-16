@@ -14,10 +14,13 @@ namespace Agenda.Application.Contacts.Handlers
             _db = db;
         }
 
-        public async Task<ContactDto?> Handle(GetContactByIdQuery request, CancellationToken cancellationToken)
+        public async Task<ContactDto?> Handle(
+            GetContactByIdQuery request,
+            CancellationToken cancellationToken
+        )
         {
-            var contact = await _db.Contacts
-                .AsNoTracking()
+            var contact = await _db
+                .Contacts.AsNoTracking()
                 .Where(c => c.Id == request.Id)
                 .Select(c => new ContactDto
                 {
@@ -25,7 +28,7 @@ namespace Agenda.Application.Contacts.Handlers
                     Name = c.Name,
                     Email = c.Email,
                     Phone = c.Phone,
-                    CreatedAt = c.CreatedAt
+                    CreatedAt = c.CreatedAt,
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 

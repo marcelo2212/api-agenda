@@ -13,7 +13,10 @@ public class DeleteContactHandler : IRequestHandler<DeleteContactCommand, bool>
         _db = db;
     }
 
-    public async Task<bool> Handle(DeleteContactCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(
+        DeleteContactCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var contact = await _db.Contacts.FindAsync(new object[] { request.Id }, cancellationToken);
 

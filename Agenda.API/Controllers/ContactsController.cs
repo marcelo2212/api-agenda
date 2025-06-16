@@ -1,9 +1,8 @@
 using Agenda.Application.Contacts.Commands;
 using Agenda.Application.Contacts.Dtos;
-using MediatR;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Agenda.Application.Contacts.Queries;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Agenda.API.Controllers;
 
@@ -65,6 +64,4 @@ public class ContactsController : ControllerBase
 
         return NoContent();
     }
-
-    
 }

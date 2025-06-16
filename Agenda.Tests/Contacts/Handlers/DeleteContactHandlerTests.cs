@@ -26,7 +26,7 @@ namespace Agenda.Tests.Contacts.Handlers
             {
                 Name = "João Excluir",
                 Email = "joao@delete.com",
-                Phone = "11999990000"
+                Phone = "11999990000",
             };
 
             context.Contacts.Add(contact);
@@ -35,10 +35,8 @@ namespace Agenda.Tests.Contacts.Handlers
             var handler = new DeleteContactHandler(context);
             var command = new DeleteContactCommand(contact.Id);
 
-            // Act
             await handler.Handle(command, CancellationToken.None);
 
-            // Assert
             var deleted = await context.Contacts.FindAsync(contact.Id);
             Assert.Null(deleted);
         }
@@ -46,17 +44,14 @@ namespace Agenda.Tests.Contacts.Handlers
         [Fact]
         public async Task Handle_InvalidId_ShouldNotThrowAndDoNothing()
         {
-            // Arrange
             var context = GetInMemoryDbContext();
             var handler = new DeleteContactHandler(context);
 
             var fakeId = Guid.NewGuid();
             var command = new DeleteContactCommand(fakeId);
 
-            // Act & Assert
             await handler.Handle(command, CancellationToken.None);
 
-            // Confirma que nenhum contato foi removido (db vazio)
             Assert.Empty(await context.Contacts.ToListAsync());
         }
     }

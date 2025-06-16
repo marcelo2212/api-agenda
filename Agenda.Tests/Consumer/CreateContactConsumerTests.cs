@@ -15,7 +15,11 @@ namespace Agenda.Infrastructure.Messaging.Consumers
         private readonly ILogger<CreateContactConsumer> _logger;
         protected readonly RabbitMqOptions _options;
 
-        public CreateContactConsumer(IServiceProvider serviceProvider, ILogger<CreateContactConsumer> logger, RabbitMqOptions options)
+        public CreateContactConsumer(
+            IServiceProvider serviceProvider,
+            ILogger<CreateContactConsumer> logger,
+            RabbitMqOptions options
+        )
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -27,11 +31,13 @@ namespace Agenda.Infrastructure.Messaging.Consumers
             using var connection = CreateConnection();
             using var channel = connection.CreateModel();
 
-            channel.QueueDeclare(queue: "contacts.create",
-                                 durable: true,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
+            channel.QueueDeclare(
+                queue: "contacts.create",
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null
+            );
 
             var consumer = new EventingBasicConsumer(channel);
 
@@ -78,7 +84,7 @@ namespace Agenda.Infrastructure.Messaging.Consumers
                 Port = _options.Port,
                 UserName = _options.Username,
                 Password = _options.Password,
-                VirtualHost = _options.VirtualHost
+                VirtualHost = _options.VirtualHost,
             };
 
             return factory.CreateConnection();

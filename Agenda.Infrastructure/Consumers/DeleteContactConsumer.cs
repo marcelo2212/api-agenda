@@ -17,7 +17,11 @@ public class DeleteContactConsumer : BackgroundService
     private readonly IModel _channel;
     private readonly IConnection _connection;
 
-    public DeleteContactConsumer(IServiceProvider serviceProvider, ILogger<DeleteContactConsumer> logger, RabbitMqOptions options)
+    public DeleteContactConsumer(
+        IServiceProvider serviceProvider,
+        ILogger<DeleteContactConsumer> logger,
+        RabbitMqOptions options
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -29,12 +33,17 @@ public class DeleteContactConsumer : BackgroundService
             UserName = options.Username,
             Password = options.Password,
             VirtualHost = options.VirtualHost,
-            DispatchConsumersAsync = true
+            DispatchConsumersAsync = true,
         };
 
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
-        _channel.QueueDeclare(queue: "contacts.delete", durable: true, exclusive: false, autoDelete: false);
+        _channel.QueueDeclare(
+            queue: "contacts.delete",
+            durable: true,
+            exclusive: false,
+            autoDelete: false
+        );
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -64,7 +73,6 @@ public class DeleteContactConsumer : BackgroundService
                 await mediator.Send(new DeleteContactCommand(id), stoppingToken);
 
                 var message = $"Contato {id} excluído com sucesso";
-                _logger.LogInformation("[✔] {Message}", message);
 
                 var responseBytes = Encoding.UTF8.GetBytes(message);
 

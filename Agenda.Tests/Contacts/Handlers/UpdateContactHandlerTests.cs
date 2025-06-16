@@ -21,14 +21,13 @@ namespace Agenda.Tests.Contacts.Handlers
         [Fact]
         public async Task Handle_ValidUpdateCommand_ShouldUpdateContact()
         {
-
             var context = GetInMemoryDbContext();
 
             var existingContact = new Contact
             {
                 Name = "Original",
                 Email = "original@email.com",
-                Phone = "11911111111"
+                Phone = "11911111111",
             };
 
             context.Contacts.Add(existingContact);
@@ -40,7 +39,7 @@ namespace Agenda.Tests.Contacts.Handlers
             {
                 Name = "Atualizado",
                 Email = "novo@email.com",
-                Phone = "11999999999"
+                Phone = "11999999999",
             };
 
             var command = new UpdateContactCommand(existingContact.Id, updateDto);

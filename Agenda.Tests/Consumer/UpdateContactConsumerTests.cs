@@ -17,7 +17,7 @@ namespace Agenda.Tests.Contacts.Handlers
             {
                 Name = "Original Name",
                 Email = "original@email.com",
-                Phone = "1111111111"
+                Phone = "1111111111",
             };
 
             context.Contacts.Add(existingContact);
@@ -27,7 +27,7 @@ namespace Agenda.Tests.Contacts.Handlers
             {
                 Name = "Updated Name",
                 Email = "updated@email.com",
-                Phone = "2222222222"
+                Phone = "2222222222",
             };
 
             var command = new UpdateContactCommand(existingContact.Id, dto);
